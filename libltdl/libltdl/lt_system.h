@@ -134,7 +134,7 @@ or obtained by writing to the Free Software Foundation, Inc.,
 # define LT_PATHSEP_CHAR	':'
 #endif
 
-#if defined _MSC_VER /* Visual Studio */
+#if defined _MSC_VER && !defined(R_OK)/* Visual Studio */
 #  define R_OK 4
 #endif
 

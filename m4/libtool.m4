@@ -169,6 +169,16 @@ AC_REQUIRE([AC_PROG_CC])dnl
 AC_REQUIRE([LT_PATH_LD])dnl
 AC_REQUIRE([LT_PATH_NM])dnl
 dnl
+# On winnt, the Microsoft compiler (or compatible) is used behind the scenes.
+# While wrappers around it may be capable of resolving symbolic links, the
+# compiler (cl.exe) chokes on header files which are symlinked, as the
+# wrapper cannot know about them.
+# Everybody would be happy with ln -s, except libtoolize without --copy.
+# There ln -s breaks the testsuite, since it tries to compile symlinked
+# source, which is not supported by the compiler.
+case $LN_S,$host_os in
+,winnt*|"ln -s",winnt*) LN_S="cp -p" ;;
+esac
 AC_REQUIRE([AC_PROG_LN_S])dnl
 test -z "$LN_S" && LN_S="ln -s"
 _LT_DECL([], [LN_S], [1], [Whether we need soft or hard links])dnl
@@ -1741,7 +1751,7 @@ AC_CACHE_VAL([lt_cv_sys_max_cmd_len], [dnl
     lt_cv_sys_max_cmd_len=`expr $lt_cv_sys_max_cmd_len \* 3`
     ;;
 
-  interix*)
+  interix* | winnt*)
     # We know the value 262144 and hardcode it with a safety zone (like BSD)
     lt_cv_sys_max_cmd_len=196608
     ;;
@@ -2224,9 +2234,18 @@ if test -z "$STRIP"; then
   AC_MSG_RESULT([no])
 else
   if $STRIP -V 2>&1 | $GREP "GNU strip" >/dev/null; then
-    old_striplib="$STRIP --strip-debug"
-    striplib="$STRIP --strip-unneeded"
-    AC_MSG_RESULT([yes])
+    case $host_os in
+    winnt*)
+      # Stripping is not save here, since POSIXish host utils may
+      # be detected, but we operate on native windows libraries.
+      AC_MSG_RESULT([no])
+      ;;
+    *)
+      old_striplib="$STRIP --strip-debug"
+      striplib="$STRIP --strip-unneeded"
+      AC_MSG_RESULT([yes])
+      ;;
+    esac
   else
     case $host_os in
     darwin*)
@@ -2380,6 +2399,38 @@ BEGIN {RS = " "; FS = "/|\n";} {
   sys_lib_search_path_spec=`$ECHO "$lt_search_path_spec" | $lt_NL2SP`
 else
   sys_lib_search_path_spec="/lib /usr/lib /usr/local/lib"
+  case $host_os in
+  winnt*)
+    sys_lib_search_path_spec=`$CC -print-search-dirs |
+      $AWK '/^libraries:/{sub(/^libraries: *=?/,""); print}'`
+    # The space separated shell string breaks on characters like blanks and
+    # parentheses often found in Windows directory names.  Fortunately, the
+    # 8.3 DOS format does not use these characters, but that might be disabled.
+    # First, convert to 8.3 DOS format to remove invalid characters eventually.
+    sys_lib_search_path_spec=`cygpath --path --dos "$sys_lib_search_path_spec"`
+    # Second, converting back to unix format does preserve 8.3 path parts.
+    sys_lib_search_path_spec=`cygpath --path --unix "$sys_lib_search_path_spec"`
+    # Finally, convert to the space separated list, but filter out path names
+    # with invalid characters: They were created while 8.3 DOS file name
+    # creation was disabled for that partition.
+    lt_search_path_spec=$sys_lib_search_path_spec
+    sys_lib_search_path_spec=
+    lt_save_ifs=$IFS;
+    IFS=$PATH_SEPARATOR
+    for lt_path in $lt_search_path_spec
+    do
+      IFS=$lt_save_ifs
+      case $lt_path in
+      *[[' ()']]*)
+	AC_MSG_WARN([missing 8.3 path name to find libs in $lt_path])
+	continue
+	;;
+      esac
+      sys_lib_search_path_spec="$sys_lib_search_path_spec${sys_lib_search_path_spec:+ }$lt_path"
+    done
+    IFS=$lt_save_ifs
+    ;;
+  esac
 fi])
 library_names_spec=
 libname_spec='lib$name'
@@ -2541,6 +2592,39 @@ bsdi[[45]]*)
   # the default ld.so.conf also contains /usr/contrib/lib and
   # /usr/X11R6/lib (/usr/X11 is a link to /usr/X11R6), but let us allow
   # libtool to hard-code these into programs
+  ;;
+
+winnt*)
+  # The real dll is NAME.dll,
+  # the import lib is NAME.lib, but
+  # the static lib is libNAME.lib, which requires libname_spec=lib$name.
+  # Upon /path/to/*.lib, we use deplibs_check_method=file_magic to
+  # accept NAME.lib as import lib, but reject static libNAME.lib.
+  libext=lib
+  version_type=windows
+  need_version=no
+  need_lib_prefix=no
+  shrext_cmds=.dll
+  library_names_spec='${libname#lib}.$libext'
+  soname_spec='${libname#lib}$release$versuffix$shared_ext'
+  sys_lib_dlsearch_path_spec=
+  shlibpath_var=PATH
+  shlibpath_overrides_runpath=yes
+  # DLL is installed to $(libdir)/../bin by postinstall_cmds
+  postinstall_cmds='base_file=`basename \$file`~
+    dlpath=`$SHELL 2>&1 -c '\''. $dir/'\''\$base_file'\''i; echo \$dlname'\''`~
+    dldir=$destdir/`dirname \$dlpath`~
+    test -d \$dldir || mkdir -p \$dldir~
+    $install_prog $dir/$dlname \$dldir/$dlname~
+    chmod a+x \$dldir/$dlname~
+    if test -f $dir/${dlname%.dll}.pdb; then $install_prog $dir/${dlname%.dll}.pdb \$dldir/${dlname%.dll}.pdb; fi~
+    if test -n '\''$stripme'\'' && test -n '\''$striplib'\''; then
+      eval '\''$striplib \$dldir/$dlname'\'' || exit \$?;
+    fi'
+  postuninstall_cmds='dldll=`$SHELL 2>&1 -c '\''. $file; echo \$dlname'\''`~
+    dlpath=$dir/\$dldll~
+    func_append rmfiles " \$dlpath \${dlpath%.dll}.pdb"'
+  dynamic_linker='Win32 link.exe with Parity extensions'
   ;;
 
 cygwin* | mingw* | pw32* | cegcc*)
@@ -3486,7 +3570,7 @@ cygwin*)
   lt_cv_file_magic_cmd='func_win32_libid'
   ;;
 
-mingw* | pw32*)
+mingw* | pw32* | winnt*)
   # Base MSYS/MinGW do not provide the 'file' command needed by
   # func_win32_libid shell function, so use a weaker test based on 'objdump',
   # unless we find 'file', for example because we are cross-compiling.
@@ -3863,7 +3947,7 @@ AC_DEFUN([LT_LIB_M],
 [AC_REQUIRE([AC_CANONICAL_HOST])dnl
 LIBM=
 case $host in
-*-*-beos* | *-*-cegcc* | *-*-cygwin* | *-*-haiku* | *-*-pw32* | *-*-darwin*)
+*-*-beos* | *-*-cegcc* | *-*-cygwin* | *-*-haiku* | *-*-pw32* | *-*-darwin* | *-*-winnt*)
   # These system don't have libm, or don't need it
   ;;
 *-ncr-sysv4.3*)
@@ -3938,7 +4022,7 @@ case $host_os in
 aix*)
   symcode='[[BCDT]]'
   ;;
-cygwin* | mingw* | pw32* | cegcc*)
+cygwin* | mingw* | pw32* | cegcc* | winnt*)
   symcode='[[ABCDGISTW]]'
   ;;
 hpux*)
@@ -3990,6 +4074,16 @@ else
   lt_cdecl_hook=
   lt_c_name_hook=
   lt_c_name_lib_hook=
+  case $host_os in
+  winnt*)
+    lt_cv_sys_global_symbol_to_import="sed -n -e 's/^D [[^ ]]* \([[a-zA-Z_]][[0-9a-zA-Z_]]*\)$/\1/p'"
+    lt_cdecl_hook=" -e 's/^D [[^ ]]* \([[a-zA-Z_]][[0-9a-zA-Z_]]*\)$/extern __declspec(dllimport) char \1;/p'"
+    lt_c_name_hook=" -e 's/^D [[^ ]]* \([[a-zA-Z_]][[0-9a-zA-Z_]]*\)$/  {\"\1\", (void *) 0},/p'"
+    lt_c_name_lib_hook="\
+    -e 's/^D [[^ ]]* \(lib[[a-zA-Z_]][[0-9a-zA-Z_]]*\)$/  {\"\1\", (void *) 0},/p'\
+    -e 's/^D [[^ ]]* \([[a-zA-Z_]][[0-9a-zA-Z_]]*\)$/  {\"lib\1\", (void *) 0},/p'"
+    ;;
+  esac
 fi
 
 # Transform an extracted symbol line into a proper C declaration.
@@ -4327,6 +4421,11 @@ m4_if([$1], [CXX], [
 	  # _LT_TAGVAR(lt_prog_compiler_static, $1)="--no_auto_instantiation -u __main -u __premain -u _abort -r $COOL_DIR/lib/libOrb.a $MVME_DIR/lib/CC/libC.a $MVME_DIR/lib/classix/libcx.s.a"
 	  ;;
 	esac
+	;;
+      winnt*)
+	_LT_TAGVAR(lt_prog_compiler_pic, $1)='-DDLL_EXPORT'
+	_LT_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
+	_LT_TAGVAR(lt_prog_compiler_static, $1)='-static'
 	;;
       mingw* | cygwin* | os2* | pw32* | cegcc*)
 	# This hack is so that the source file can tell whether it is being
@@ -4692,6 +4791,12 @@ m4_if([$1], [CXX], [
       esac
       ;;
 
+    winnt*)
+      _LT_TAGVAR(lt_prog_compiler_pic, $1)='-DDLL_EXPORT'
+      _LT_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
+      _LT_TAGVAR(lt_prog_compiler_static, $1)='-static'
+      ;;
+
     hpux9* | hpux10* | hpux11*)
       _LT_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
       # PIC is the default for IA64 HP-UX and 64-bit HP-UX, but
@@ -4955,6 +5060,9 @@ m4_if([$1], [CXX], [
   pw32*)
     _LT_TAGVAR(export_symbols_cmds, $1)=$ltdll_cmds
     ;;
+  winnt*)
+    _LT_TAGVAR(exclude_expsyms, $1)='__NULL_IMPORT_DESCRIPTOR|__IMPORT_DESCRIPTOR_.*'
+    ;;
   cygwin* | mingw* | cegcc*)
     case $cc_basename in
     cl* | icl*)
@@ -5013,7 +5121,7 @@ dnl Note also adjust exclude_expsyms for C++ above.
   extract_expsyms_cmds=
 
   case $host_os in
-  cygwin* | mingw* | pw32* | cegcc*)
+  cygwin* | mingw* | pw32* | cegcc* | winnt*)
     # FIXME: the MSVC++ and ICC port hasn't been tested in a loooong time
     # When not using gcc, we currently assume that we are using
     # Microsoft Visual C++ or Intel C++ Compiler.
@@ -5583,6 +5691,13 @@ _LT_EOF
 
     bsdi[[45]]*)
       _LT_TAGVAR(export_dynamic_flag_spec, $1)=-rdynamic
+      ;;
+
+    winnt*)
+      _LT_TAGVAR(exclude_expsyms, $1)='__NULL_IMPORT_DESCRIPTOR|__IMPORT_DESCRIPTOR_.*'
+      _LT_TAGVAR(archive_cmds, $1)='$CC -shared $pic_flag $libobjs $deplibs $compiler_flags -o $output_objdir/$soname -Wl,--out-implib,$lib'
+      _LT_TAGVAR(archive_cmds_need_lc, $1)=no
+      _LT_TAGVAR(allow_undefined_flag, $1)=unsupported
       ;;
 
     cygwin* | mingw* | pw32* | cegcc*)
@@ -6660,6 +6775,12 @@ if test yes != "$_lt_caught_CXX_error"; then
 	  ;;
         esac
         ;;
+
+      winnt*)
+	_LT_TAGVAR(archive_cmds, $1)='$CC -shared $pic_flag $libobjs $deplibs $compiler_flags -o $output_objdir/$soname -Wl,--out-implib,$lib'
+	_LT_TAGVAR(archive_cmds_need_lc, $1)=no
+	_LT_TAGVAR(allow_undefined_flag, $1)=unsupported
+	;;
 
       cygwin* | mingw* | pw32* | cegcc*)
 	case $GXX,$cc_basename in
@@ -8345,12 +8466,12 @@ AC_REQUIRE([AC_CANONICAL_BUILD])dnl
 AC_MSG_CHECKING([how to convert $build file names to $host format])
 AC_CACHE_VAL(lt_cv_to_host_file_cmd,
 [case $host in
-  *-*-mingw* )
+  *-*-mingw* | *-*-winnt* )
     case $build in
       *-*-mingw* ) # actually msys
         lt_cv_to_host_file_cmd=func_convert_file_msys_to_w32
         ;;
-      *-*-cygwin* )
+      *-*-cygwin* | *-*-winnt* )
         lt_cv_to_host_file_cmd=func_convert_file_cygwin_to_w32
         ;;
       * ) # otherwise, assume *nix

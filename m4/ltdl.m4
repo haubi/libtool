@@ -533,6 +533,9 @@ AC_CACHE_CHECK([whether deplibs are loaded by dlopen],
   sysv5* | sco3.2v5* | sco5v6* | unixware* | OpenUNIX* | sysv4*uw2*)
     libltdl_cv_sys_dlopen_deplibs=yes
     ;;
+  winnt*)
+    lt_cv_sys_dlopen_deplibs=yes
+    ;;
   esac
   ])
 if test yes != "$lt_cv_sys_dlopen_deplibs"; then
@@ -712,7 +715,7 @@ darwin[[1567]].*)
 beos*)
   LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}load_add_on.la"
   ;;
-cygwin* | mingw* | pw32*)
+cygwin* | mingw* | pw32* | winnt*)
   AC_CHECK_DECLS([cygwin_conv_path], [], [], [[#include <sys/cygwin.h>]])
   LT_DLLOADERS="$LT_DLLOADERS ${lt_dlopen_dir+$lt_dlopen_dir/}loadlibrary.la"
   ;;
