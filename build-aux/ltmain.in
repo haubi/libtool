@@ -2810,7 +2810,7 @@ extern \"C\" {
 	          fi
 	          func_to_tool_file "$dlprefile" func_convert_file_msys_to_w32
 	          eval "$NM \"$func_to_tool_file_result\" 2>/dev/null | $global_symbol_pipe |
-	            $SED -e '/I __imp/d' -e 's/I __nm_/D /;s/_nm__//' >> '$nlist'"
+	            $SED -e '/I __imp/d' -e 's/I __nm_/D /;s/ __nm_/ /' >> '$nlist'"
 	        }
 	      else # not an import lib
 	        $opt_dry_run || {

@@ -4026,7 +4026,12 @@ esac
 for ac_symprfx in "" "_"; do
 
   # Transform symcode, sympat, and symprfx into a raw symbol and a C symbol.
-  symxfrm="\\1 $ac_symprfx\\2 \\2"
+  # In Windows import libraries, symbols may be prefixed with __imp_, as well
+  # as __nm_ when using GNU ld.  The leading underscore (in 32bit) comes after
+  # the __imp_ and __nm_ prefix, so make sure to strip the underscore from the
+  # symbol name instead of the __imp_ or __nm_ prefix, leaving these prefixes
+  # intact in the symbol pipe output.
+  symxfrm="\\1 \\2$ac_symprfx\\3 \\2\\3"
 
   # Write the raw and C identifiers.
   if test "$lt_cv_nm_interface" = "MS dumpbin"; then
@@ -4052,7 +4057,7 @@ for ac_symprfx in "" "_"; do
 "     s[1]~prfx {split(s[1],t,\"@\"); print f,t[1],substr(t[1],length(prfx))}"\
 "     ' prfx=^$ac_symprfx]"
   else
-    lt_cv_sys_global_symbol_pipe="sed -n -e 's/^.*[[	 ]]\($symcode$symcode*\)[[	 ]][[	 ]]*$ac_symprfx$sympat$opt_cr$/$symxfrm/p'"
+    lt_cv_sys_global_symbol_pipe="sed -n -e 's/^.*[[	 ]]\($symcode$symcode*\)[[	 ]][[	 ]]*\(__imp_\|__nm_\)\{0,1\}$ac_symprfx$sympat$opt_cr$/$symxfrm/p'"
   fi
   lt_cv_sys_global_symbol_pipe="$lt_cv_sys_global_symbol_pipe | sed '/ __gnu_lto/d'"
 
