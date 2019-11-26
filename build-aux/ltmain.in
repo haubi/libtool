@@ -3026,14 +3026,14 @@ func_win32_libid ()
   $debug_cmd
 
   win32_libid_type=unknown
-  win32_fileres=`file -L $1 2>/dev/null`
+  win32_fileres=`file -L "$1" 2>/dev/null`
   case $win32_fileres in
   *ar\ archive\ import\ library*) # definitely import
     win32_libid_type="x86 archive import"
     ;;
   *ar\ archive*) # could be an import, or static
     # Keep the egrep pattern in sync with the one in _LT_CHECK_MAGIC_METHOD.
-    if eval $OBJDUMP -f $1 | $SED -e '10q' 2>/dev/null |
+    if eval $OBJDUMP -f \"\$1\" | $SED -e '10q' 2>/dev/null |
        $EGREP 'file format (pei*-i386(.*architecture: i386)?|pe-arm-wince|pe-x86-64)' >/dev/null; then
       case $nm_interface in
       "MS dumpbin")
@@ -7418,7 +7418,7 @@ EOF
 		      # but so what?
 		      potlib=$potent_lib
 		      while test -h "$potlib" 2>/dev/null; do
-			potliblink=`ls -ld $potlib | $SED 's/.* -> //'`
+			potliblink=`ls -ld "$potlib" | $SED 's/.* -> //'`
 			case $potliblink in
 			[\\/]* | [A-Za-z]:[\\/]*) potlib=$potliblink;;
 			*) potlib=`$ECHO "$potlib" | $SED 's|[^/]*$||'`"$potliblink";;
