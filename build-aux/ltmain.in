@@ -3049,12 +3049,10 @@ func_win32_libid ()
 	func_to_tool_file "$1" func_convert_file_msys_to_w32
 	win32_nmres=`eval $NM -f posix -A \"$func_to_tool_file_result\" |
 	  $SED -n -e '
-	    1,100{
-		/ I /{
-		    s|.*|import|
-		    p
-		    q
-		}
+	    / I /{
+		s|.*|import|
+		p
+		q
 	    }'`
 	;;
       esac
